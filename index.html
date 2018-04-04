@@ -1,0 +1,181 @@
+<!-- Stuart Green Subtle Software -->
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Web Renderer - Simple version </title>
+           <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/85/three.js"></script>
+            <script src="https://threejs.org/examples/js/loaders/OBJLoader.js"></script>
+            <script src="https://threejs.org/examples/js/loaders/MTLLoader.js"></script>
+            <script src="https://threejs.org/examples/js/loaders/DDSLoader.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js"></script>
+            <script src="libs/Detector.js"></script>
+
+        <style>
+            body {
+                /* set margin to 0 and overflow to hidden, to go fullscreen */
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+    <!-- Javascript code that runs Three.js -->
+		<script type="text/javascript">
+
+			// Initialise variables.
+			var container;
+			var camera, scene, renderer;
+			var mouseX = 0, mouseY = 0;
+			var stats;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			// Call initialise function
+			init();
+
+			// Call the stats to count FPS.
+			addStatsObject();
+
+			// Call the animation function.
+			animate();
+
+			// init function.
+			function init() {
+
+				// Use container to create the document element
+				container = document.createElement( 'div' );
+				// Add node to the end of child node.
+				document.body.appendChild( container );
+
+				// Set up camera perspective
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000);
+				// Set up the cameras depth for viewing.
+				camera.position.z = 5;
+
+				// Create a new scene
+				scene = new THREE.Scene();
+
+				// Create ambient lighting
+				var ambient = new THREE.AmbientLight(0xEEEEEE);
+				//Add ambient lighting to the scene
+				scene.add( ambient );
+
+
+				// Create directional light
+				var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 2);
+				// Set the position of the directional light and normalise.
+				directionalLight.position.set( 1, 1, 1 ).normalize();
+				// Add directional light to the scene.
+				scene.add( directionalLight );
+
+				// Wait for car model to load
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						// Display loading % in console output
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				// Catches error if material or object file doesn't load.
+				var onError = function ( xhr ) { };
+				THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader() );
+
+				// Create new material loader
+				var mtlLoader = new THREE.MTLLoader();
+				// Set the path to find the materials file
+				mtlLoader.setPath( 'libs/Avent/' );
+				// Load the materials.
+				mtlLoader.load( 'Avent.mtl', function( materials ) {
+					materials.preload();
+					// Create new object loader.
+					var objLoader = new THREE.OBJLoader();
+					// Set the materials to the object.
+					objLoader.setMaterials( materials );
+					// Set path to obj file.
+					objLoader.setPath( 'libs/Avent/' );
+					// Load the object file.
+					objLoader.load( 'Avent.obj', function ( object ) {
+						// Set position of the object in the screen.
+						object.position.y = 0;
+						console.log("Object position", object.position.y);
+						// Add object to the screen.
+						scene.add( object );
+					}, onProgress, onError );
+				});
+
+
+				// Set new web render
+				renderer = new THREE.WebGLRenderer();
+				// Set the pixel ration to the device pixel ratio.
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor(0xFFFFFF);
+				// Set the window size
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				// Event listen for the mouse movement.
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				// Event listener for the window being resized.
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+
+			//Function keeps view in the centre of the screen if being resized.
+			function onWindowResize() {
+				// Divide the window width by 2 to get the centre.
+				windowHalfX = window.innerWidth / 2;
+				// Divide the window height by 2 to get the centre.
+				windowHalfY = window.innerHeight / 2;
+				// Set the cameras aspect ration.
+				camera.aspect = window.innerWidth / window.innerHeight;
+				// Update the camera projection matrix.
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			function onDocumentMouseMove( event ) {
+				mouseX = ( event.clientX - windowHalfX ) / 2;
+				//console.log("mouse position ", mouseX);
+				mouseY = ( event.clientY - windowHalfY ) / 2;
+				//console.log("mouse position ", mouseY);
+			}
+
+			// Function for adding the FPS.
+			function addStatsObject() {
+				stats = new Stats();
+				stats.setMode(0);
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.left = '0px';
+				stats.domElement.style.top = '0px';
+				document.body.appendChild(stats.domElement);
+			}
+
+			// The Animate function
+			function animate() {
+				// Request the frame to animate the model.
+				// Call function to render to the screen.
+				render();
+				requestAnimationFrame(animate);
+
+			}
+
+			// Render function
+			function render() {
+				// Change position of the camera depending on the mouse position.
+				camera.position.x += ( - mouseX - camera.position.x ) * 0.75;
+				// Change position of the camera depending on the mouse position.
+				camera.position.y += ( - mouseY - camera.position.y ) * 0.75;
+				// Set the camera look at position before rendering.
+				camera.lookAt(scene.position);
+
+				// Output the render the screen.
+				renderer.render(scene, camera);
+
+				// Update stats for the FPS counter.
+				stats.update();
+			}
+
+		</script>
+	</body>
+</html>
